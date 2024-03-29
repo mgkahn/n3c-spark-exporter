@@ -259,6 +259,8 @@ class n3c_spark_extractor:
       os.mkdir(datafiles_dir)
 
     # download the cdm_table csv files, MANIFEST.csv and DATA_COUNTS.csv 
+    download_success = []
+    download_fail = []
     for table in cdm_table_list:
       cdm_table = table.strip()
       cdm_table_name_upper = cdm_table.upper()
@@ -267,7 +269,7 @@ class n3c_spark_extractor:
       
       storage_client = storage.Client()
       bucket = storage_client.get_bucket(self.gcs_bucket)
-
+      
       for page in bucket.list_blobs().pages:
         for blob in page:
           if blob.name.startswith(f'{self.prefix}') and cdm_table_name_upper in blob.name and data_counts_folder not in blob.name: 
@@ -277,11 +279,31 @@ class n3c_spark_extractor:
               output_folder = datafiles_dir
             file = f'{output_folder}/{cdm_table_name_upper}'
             content = bucket.blob(blob.name)
-            if (self.use_crc == 0) :
+
+            download_completed = False
+            max_retries = 3
+            retries = 0
+            if (self.use_crc == 0):
               logger.info(f'Not using CRC')
-              content.download_to_filename(file)
+              check_type = None
             else:
               logger.info(f'Using CRC')
-              content.download_to_filename(file,checksum='crc32c')
-            logger.info(f'Downloaded {output_folder}/{cdm_table_name_upper}')
+              check_type = 'crc32c'
+            while (download_completed == False and retries < max_retries):
+              try:
+               # Test retry loop with Exception
+               # if ("PERSON" in blob.name): raise Exception("test exception")
+               with open (file, "wb") as file_obj:
+                  content.download_to_file(file_obj, checksum = check_type)
+              except Exception as e:
+                logger.info(f'Download_to_file: {type(e).__name__} exception on file {cdm_table_name_upper}: Retry # {retries})')
+                retries += 1
+                if os.path.exists(file): os.remove(file)
+                if (retries >= max_retries): download_fail.append(cdm_table_name_upper)
+              else:
+                download_completed = True
+                download_success.append(cdm_table_name_upper)
+                logger.info(f'{cdm_table_name_upper} download successful')
     logger.info('Done downloading csvs...')
+    logger.info(f'Completed downloads: {download_success}')
+    if download_fail != []: logger.info(f'Failed downloads: {download_fail}')

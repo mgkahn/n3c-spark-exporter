@@ -48,15 +48,18 @@ To run this extractor -
     - n3c_spark_extractor --config config.yaml 
 7. Zip the CSVs and sftp as https://github.com/National-COVID-Cohort-Collaborative/Phenotype_Data_Acquisition/wiki/Instructions-for-Sites:-OMOP-Data-Model 
 
-NOTES - 
-    -  NOTE: If executing on Windows host, use Windows path syntax (e.g., C:\output_dir). Do not use Linux syntax (/c/output_dir). 
-    - The timeout_in_min is set to 60 mins, the pyspark batch generally takes 15-20 minutes to complete. In future if it takes more than 60 minutes, config timeout_in_min can be set to a higher value. 
-    - If you happen to kill the n3c_spark_extractor process and if the spark job was already triggered, wait until it finishes before you run n3c_spark_extractor again
-DO NOT CHANGE configuration values in batch_config.yml
+NOTES:
 
-Version history -
-    - 1.0.0 - Initial version
-    - 1.0.1 - Fix for passing bigquery-jar file location in yaml file
-    - 1.0.2 - Added a configuration delete_merged_csvs_from_bucket to disable deletion merged CSV files from GCP bucket
-    - 1.0.3 - Removed timestamps in MANIFEST.csv and updated config_example.yaml
-    - 1.0.4 - Changed column names in MANIFEST.csv to be usppercase
+  - On Windows hosts, use Windows path syntax (e.g., C:\\\\\\output_dir) for output_dir config. Do not use Linux syntax (/c/output_dir). 
+  - The timeout_in_min is set to 60 mins, the pyspark batch generally takes 15-20 minutes to complete. In future if it takes more than 60 minutes, config timeout_in_min can be set to a higher value. 
+  - If you happen to kill the n3c_spark_extractor process and if the spark job was already triggered, wait until it finishes before you run n3c_spark_extractor again
+DO NOT CHANGE configuration values in batch_config.yml
+  - CSV downloads attempt three retries before moving to next file.  Any Exception during a download triggers a retry.  A list of all successful downloads are always logged.  A list of all failed downloads are logged only if one or more failures occurred. 
+ 
+Version history:
+
+  - 1.0.0 - Initial version
+  - 1.0.1 - Fix for passing bigquery-jar file location in yaml file
+  - 1.0.2 - Added a configuration delete_merged_csvs_from_bucket to disable deletion merged CSV files from GCP bucket
+  - 1.0.3 - Removed timestamps in MANIFEST.csv and updated config_example.yaml
+  - 1.0.4 - Changed column names in MANIFEST.csv to be usppercase
